@@ -9,8 +9,10 @@ const app = express();
 // Middleware
 const allowedOrigins = [
   "http://localhost:3000",   // dev port
-  "http://localhost:3001",   // other dev port
-  "http://localhost:3003",   // your current dev port
+  "http://localhost:3001",
+  "http://localhost:3002",   // other dev port
+  "http://localhost:3003",  
+  "http://localhost:3004", // your current dev port
   "https://kiddrop.vercel.app", // if you deploy frontend
 ];
 
