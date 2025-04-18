@@ -13,7 +13,8 @@ const allowedOrigins = [
   "http://localhost:3002",
   "http://localhost:3003",
   "http://localhost:3004",
-  "https://kiddrop.vercel.app", // your deployed frontend
+  "https://kiddrop.vercel.app",
+  "https://kiddrop-7652818b8f01.herokuapp.com", // Your actual Heroku URL // your deployed frontend
 ];
 
 app.use(
