@@ -6,14 +6,14 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware
+// ✅ CORS Middleware — put this before anything else
 const allowedOrigins = [
-  "http://localhost:3000",   // dev port
+  "http://localhost:3000",
   "http://localhost:3001",
-  "http://localhost:3002",   // other dev port
-  "http://localhost:3003",  
-  "http://localhost:3004", // your current dev port
-  "https://kiddrop.vercel.app", // if you deploy frontend
+  "http://localhost:3002",
+  "http://localhost:3003",
+  "http://localhost:3004",
+  "https://kiddrop.vercel.app", // your deployed frontend
 ];
 
 app.use(
@@ -26,24 +26,26 @@ app.use(
       }
     },
     credentials: true,
+    optionsSuccessStatus: 200, // ✅ fixes issues with some browsers & Heroku
   })
 );
 
+// ✅ Body parser
 app.use(express.json());
 
-// Connect to MongoDB
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
-app.use("/api/auth", require("./routes/auth"));     // /signup, /login
-app.use("/api/parent", require("./routes/parent")); // GET /children
-app.use("/api/log", require("./routes/log"));       // POST /dropoff/:id, /pickup/:id
-app.use("/api/admin", require("./routes/admin"));   // GET /stats
+// ✅ Routes
+app.use("/api/auth", require("./routes/auth"));     // signup, login
+app.use("/api/parent", require("./routes/parent")); // children routes
+app.use("/api/log", require("./routes/log"));       // dropoff, pickup
+app.use("/api/admin", require("./routes/admin"));   // admin stats, logs, etc.
 
-// Server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
