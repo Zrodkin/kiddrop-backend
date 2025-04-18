@@ -7,7 +7,26 @@ require("dotenv").config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",   // dev port
+  "http://localhost:3001",   // other dev port
+  "http://localhost:3003",   // your current dev port
+  "https://kiddrop.vercel.app", // if you deploy frontend
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // Connect to MongoDB
