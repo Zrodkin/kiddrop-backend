@@ -165,19 +165,15 @@ router.delete("/students/:id", auth, async (req, res) => {
 
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
-    
-    // Remove student reference from parent's children array if parent exists
+
     if (student.parentId) {
       await User.findByIdAndUpdate(
         student.parentId,
         { $pull: { children: student._id } }
       );
     }
-    
-    // Delete all logs associated with this student
+
     await Log.deleteMany({ studentId: student._id });
-    
-    // Delete the student
     await Student.deleteOne({ _id: student._id });
 
     res.json({ message: "Student deleted successfully" });
@@ -185,8 +181,9 @@ router.delete("/students/:id", auth, async (req, res) => {
     console.error("Error deleting student:", err);
     res.status(500).json({ message: "Server error" });
   }
+});
 
-  // PATCH /api/admin/students/:id/approval - Approve or reject a child
+// ✅ PATCH /api/admin/students/:id/approval - Approve or reject a child
 router.patch("/students/:id/approval", auth, async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -212,6 +209,5 @@ router.patch("/students/:id/approval", auth, async (req, res) => {
   }
 });
 
-});
-
+// ✅ Export the router
 module.exports = router;
