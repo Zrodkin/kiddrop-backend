@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS Middleware — put this before anything else
+// ✅ CORS Middleware — use STATIC list to avoid preflight failure
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -15,20 +15,14 @@ const allowedOrigins = [
   "http://localhost:3004",
   "https://kiddrop.vercel.app",
   "https://kiddrop-backend.herokuapp.com",
-  "https://kiddrop-7652818b8f01.herokuapp.com", // Your actual Heroku URL // your deployed frontend
+  "https://kiddrop-7652818b8f01.herokuapp.com"
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
-    optionsSuccessStatus: 200, // ✅ fixes issues with some browsers & Heroku
+    optionsSuccessStatus: 200
   })
 );
 
