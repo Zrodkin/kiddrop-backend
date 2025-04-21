@@ -20,14 +20,18 @@ const studentSchema = new mongoose.Schema({
     enum: ["checked-in", "checked-out", "awaiting"],
     default: "awaiting"
   },
+  approvalStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending"
+  },
   lastActivity: {
     type: Date
   },
-  // --- Added Fields ---
   emergencyName: {
     type: String,
     trim: true,
-    default: '' // Default to empty string if desired
+    default: ''
   },
   emergencyPhone: {
     type: String,
@@ -40,20 +44,13 @@ const studentSchema = new mongoose.Schema({
     default: ''
   },
   allergies: {
-    type: String, // Suitable for storing notes from a textarea
+    type: String,
     default: ''
   },
   authorizedPickup: {
-    type: String, // Suitable for storing a list from a textarea
-                 // Consider Array of Strings if more structure is needed later
+    type: String,
     default: ''
-  },
-  // Note: Photo URL could be added here too if handling uploads
-  // photoUrl: {
-  //   type: String,
-  //   default: ''
-  // }
-
-}, { timestamps: true }); // Automatically adds createdAt and updatedAt
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model("Student", studentSchema);

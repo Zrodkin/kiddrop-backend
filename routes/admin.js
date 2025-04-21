@@ -185,6 +185,33 @@ router.delete("/students/:id", auth, async (req, res) => {
     console.error("Error deleting student:", err);
     res.status(500).json({ message: "Server error" });
   }
+
+  // PATCH /api/admin/students/:id/approval - Approve or reject a child
+router.patch("/students/:id/approval", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied: admin only" });
+    }
+
+    const { approvalStatus } = req.body;
+
+    if (!["pending", "approved", "rejected"].includes(approvalStatus)) {
+      return res.status(400).json({ message: "Invalid approval status." });
+    }
+
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: "Student not found." });
+
+    student.approvalStatus = approvalStatus;
+    await student.save();
+
+    res.json({ message: `Student ${approvalStatus}`, student });
+  } catch (err) {
+    console.error("Error updating approval status:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 });
 
 module.exports = router;
