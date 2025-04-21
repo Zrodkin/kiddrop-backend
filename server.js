@@ -1,12 +1,15 @@
-// backend/server.js
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
+// backend/server.js (Corrected Version - No app.options)
+
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-// ✅ CORS Middleware — use STATIC list to avoid preflight failure
+// ✅ CORS Middleware - Using options object with app.use()
+// This should handle preflight requests for routes defined AFTER it.
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -17,9 +20,9 @@ const allowedOrigins = [
   "https://kiddrop-backend.herokuapp.com",
   "https://kiddrop-7652818b8f01.herokuapp.com"
 ];
-
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -27,13 +30,11 @@ const corsOptions = {
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200 // For legacy browser compatibility
 };
-
 app.use(cors(corsOptions));
 
-// ✅ This is critical to handle browser CORS preflight OPTIONS requests
-app.options("*", cors(corsOptions));
+// REMOVED the app.options line as it caused the startup error
 
 // ✅ Body parser
 app.use(express.json());
@@ -44,14 +45,13 @@ mongoose
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Routes
-app.use("/api/auth", require("./routes/auth"));     // signup, login
+// ✅ Routes (Now uncommented and included)
+app.use("/api/auth", require("./routes/auth"));      // signup, login
 app.use("/api/parent", require("./routes/parent")); // children routes
 app.use("/api/log", require("./routes/log"));       // dropoff, pickup
 app.use("/api/admin", require("./routes/admin"));   // admin stats, logs, etc.
 
 // ✅ Start server
-const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
