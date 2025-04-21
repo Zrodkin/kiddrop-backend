@@ -215,6 +215,21 @@ router.patch("/students/:id/approval", auth, async (req, res) => {
   }
 });
 
+// GET /api/admin/parents - Get all users with role 'parent'
+router.get("/parents", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied: admin only" });
+    }
+
+    const parents = await User.find({ role: "parent" }).select("_id name email");
+    res.json(parents);
+  } catch (err) {
+    console.error("Error fetching parents:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 // ✅ Export the router
 module.exports = router;
