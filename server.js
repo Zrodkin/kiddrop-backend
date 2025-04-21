@@ -18,7 +18,8 @@ const allowedOrigins = [
   "http://localhost:3004",
   "https://kiddrop.vercel.app",
   "https://kiddrop-backend.herokuapp.com",
-  "https://kiddrop-7652818b8f01.herokuapp.com"
+  "https://kiddrop-7652818b8f01.herokuapp.com",
+  "https://shalohgo-q1aa4d5tc-zalmanrodkin-gmailcoms-projects.vercel.app",
 ];
 const corsOptions = {
   origin: function (origin, callback) {
