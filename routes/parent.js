@@ -4,6 +4,12 @@ const auth = require("../middleware/auth"); // Assuming your auth middleware is 
 const Student = require("../models/Student");
 const User = require("../models/User"); // Need User model to update parent
 
+// Add at the top of your routes in parent.js
+router.get("/test", (req, res) => {
+  console.log("Test route hit");
+  res.status(200).json({ message: "Parent route test successful" });
+});
+
 // --- GET /api/parent/children --- Get all children for logged-in parent
 router.get("/children", auth, async (req, res) => {
   try {
@@ -55,7 +61,7 @@ router.get("/child/:id", auth, async (req, res) => {
 router.post("/child", auth, async (req, res) => {
   console.log("📝 POST /api/parent/child endpoint hit");
   console.log("📦 Request body:", req.body);
-  
+
   try {
     if (req.user.role !== "parent") {
       return res.status(403).json({ message: "Access denied: parent only" });
