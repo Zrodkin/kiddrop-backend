@@ -18,13 +18,22 @@ const allowedOrigins = [
   "https://kiddrop-7652818b8f01.herokuapp.com"
 ];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    optionsSuccessStatus: 200
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// ✅ This is critical to handle browser CORS preflight OPTIONS requests
+app.options("*", cors(corsOptions));
 
 // ✅ Body parser
 app.use(express.json());
