@@ -222,7 +222,7 @@ router.get("/parents", auth, async (req, res) => {
       return res.status(403).json({ message: "Access denied: admin only" });
     }
 
-    const parents = await User.find({ role: "parent" }).select("_id name email");
+    const parents = await User.find({ role: "parent" }).select("_id name email createdAt");
     res.json(parents);
   } catch (err) {
     console.error("Error fetching parents:", err);
