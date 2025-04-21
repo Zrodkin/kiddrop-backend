@@ -1,4 +1,3 @@
-// backend/routes/auth.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -58,7 +57,7 @@ router.post("/signup", async (req, res) => {
 
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
-  console.log("📥 Login POST hit");
+  console.log("🔥 LOGIN POST route hit"); // ✅ Debug log
   console.log("🔐 Request body:", req.body);
 
   const { email, password } = req.body;
