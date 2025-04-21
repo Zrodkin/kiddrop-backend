@@ -53,8 +53,9 @@ router.get("/child/:id", auth, async (req, res) => {
 
 // --- POST /api/parent/child --- Add a new child (Added Back)
 router.post("/child", auth, async (req, res) => {
-  console.log("👶 POST /api/parent/child hit"); // Keep log for debugging deployment
-
+  console.log("📝 POST /api/parent/child endpoint hit");
+  console.log("📦 Request body:", req.body);
+  
   try {
     if (req.user.role !== "parent") {
       return res.status(403).json({ message: "Access denied: parent only" });
