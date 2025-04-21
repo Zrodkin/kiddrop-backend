@@ -183,7 +183,7 @@ router.delete("/students/:id", auth, async (req, res) => {
   }
 });
 
-// ✅ PATCH /api/admin/students/:id/approval - Approve or reject a child
+// PATCH /api/admin/students/:id/approval - Approve or reject a child
 router.patch("/students/:id/approval", auth, async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -200,6 +200,12 @@ router.patch("/students/:id/approval", auth, async (req, res) => {
     if (!student) return res.status(404).json({ message: "Student not found." });
 
     student.approvalStatus = approvalStatus;
+
+    // Optionally update student.status as well
+    if (approvalStatus === "approved") {
+      student.status = "awaiting"; // or "checked-out" if you prefer
+    }
+
     await student.save();
 
     res.json({ message: `Student ${approvalStatus}`, student });
@@ -208,6 +214,7 @@ router.patch("/students/:id/approval", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // ✅ Export the router
 module.exports = router;
