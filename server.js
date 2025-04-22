@@ -1,5 +1,5 @@
 // backend/server.js (Corrected Version - No app.options)
-
+require("./jobs/scheduledAlerts"); // 👈 Starts cron job when server runs
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');

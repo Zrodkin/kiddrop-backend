@@ -6,6 +6,8 @@ const Student = require("../models/Student");
 const Log = require("../models/Log"); // Add this line to import the Log model
 const User = require("../models/User"); // Add this to get parent names
 const Notification = require("../models/Notification"); // Add this line
+const sendEmail = require("../utils/sendEmail");
+
 
 // GET /api/admin/stats - get counts for dashboard
 router.get("/stats", auth, async (req, res) => {
@@ -246,9 +248,9 @@ router.post("/send-alert", auth, async (req, res) => {
   // Destructure expected data from frontend request body
   const {
     alertType,
-    audienceType, // Changed from 'audience' to match frontend state key more closely
+    audienceType,
     selectedGrades,
-    selectedParentIds, // Expecting an array of IDs from frontend now
+    selectedParentIds,
     subject,
     messageBody,
     link,
@@ -268,54 +270,97 @@ router.post("/send-alert", auth, async (req, res) => {
     return res.status(400).json({ message: "Please select target parents." });
   }
   if (scheduleLater && !scheduledDateTime) {
-      return res.status(400).json({ message: "Please provide a date/time for scheduled alert." });
+    return res.status(400).json({ message: "Please provide a date/time for scheduled alert." });
   }
 
   try {
     // --- Prepare Notification Document ---
     const notificationData = {
-      senderId: req.user.id, // Logged-in admin's ID from auth middleware
+      senderId: req.user.id,
       alertType,
       audienceType,
       subject,
       messageBody,
-      link: link || undefined, // Only save if provided
+      link: link || undefined,
       deliveryMethods,
-      sentAt: scheduleLater ? undefined : new Date(), // Set sentAt now only if not scheduling
+      sentAt: scheduleLater ? undefined : new Date(),
       scheduledAt: scheduleLater ? new Date(scheduledDateTime) : undefined,
-      // Add recipient details based on audience type
       ...(audienceType === 'grades' && { recipientGrades: selectedGrades }),
       ...(audienceType === 'individuals' && { recipientParentIds: selectedParentIds }),
     };
 
     // --- Save Notification to Database ---
-    // In this version, we just save the record.
-    // Real implementation would involve:
-    // 1. If not scheduled: Fetch actual recipient emails/phones based on audience.
-    // 2. Integrate with Nodemailer/Twilio/etc. to send emails/SMS.
-    // 3. Potentially create individual notification records per user for read tracking.
-    // 4. Handle scheduling logic (e.g., using a job queue like Agenda or Bull).
-
     const newNotification = new Notification(notificationData);
     await newNotification.save();
+    // --- Create individual in-app notifications ---
+if (!scheduleLater && deliveryMethods.app) {
+  let recipients = [];
+
+  if (audienceType === "all") {
+    recipients = await User.find({ role: "parent" }).select("_id");
+  } else if (audienceType === "grades") {
+    const students = await Student.find({ grade: { $in: selectedGrades } }).populate("parentId", "_id");
+    recipients = students.map(s => s.parentId).filter(p => p?._id);
+  } else if (audienceType === "individuals") {
+    recipients = await User.find({ _id: { $in: selectedParentIds } }).select("_id");
+  }
+
+  const uniqueParentIds = [...new Set(recipients.map(p => p._id.toString()))];
+
+  const personalNotifications = uniqueParentIds.map(parentId => ({
+    userId: parentId,
+    senderId: req.user.id,
+    alertType,
+    audienceType,
+    subject,
+    messageBody,
+    link: link || undefined,
+    deliveryMethods,
+    sentAt: new Date(),
+    read: false
+  }));
+
+  await Notification.insertMany(personalNotifications);
+  console.log(`🔔 Created ${personalNotifications.length} in-app notifications.`);
+}
 
     console.log("✅ Notification saved:", newNotification._id);
 
+    // --- SEND EMAILS if not scheduled ---
+    if (!scheduleLater) {
+      let recipients = [];
+
+      if (audienceType === "all") {
+        recipients = await User.find({ role: "parent" }).select("email name");
+      } else if (audienceType === "grades") {
+        const students = await Student.find({ grade: { $in: selectedGrades } }).populate("parentId", "email name");
+        recipients = students.map(s => s.parentId).filter(p => p?.email);
+      } else if (audienceType === "individuals") {
+        recipients = await User.find({ _id: { $in: selectedParentIds } }).select("email name");
+      }
+
+      const uniqueEmails = [...new Set(recipients.map(p => p.email).filter(Boolean))];
+
+      for (const email of uniqueEmails) {
+        await sendEmail(email, subject, `<p>${messageBody}</p>${link ? `<p><a href="${link}">${link}</a></p>` : ""}`);
+      }
+    }
+
     // --- Send Response ---
     res.status(201).json({
-      message: scheduleLater ? "Alert scheduled successfully!" : "Alert saved successfully! (Sending logic TBD)",
-      notification: newNotification // Send back the saved notification
+      message: scheduleLater ? "Alert scheduled successfully!" : "Alert sent successfully!",
+      notification: newNotification
     });
 
   } catch (err) {
     console.error("❌ Error processing send-alert:", err);
-    // Check for specific errors like invalid date format for scheduling
     if (err instanceof Error && err.message.includes('Invalid time value')) {
-        return res.status(400).json({ message: "Invalid scheduled date/time format." });
+      return res.status(400).json({ message: "Invalid scheduled date/time format." });
     }
     res.status(500).json({ message: "Server error processing alert" });
   }
 });
+
 
 // Make sure module.exports = router; is at the very bottom of the file
 

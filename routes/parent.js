@@ -3,6 +3,8 @@ const router = express.Router();
 const auth = require("../middleware/auth"); // Assuming your auth middleware is here
 const Student = require("../models/Student");
 const User = require("../models/User"); // Need User model to update parent
+const Notification = require("../models/Notification");
+
 
 // Add at the top of your routes in parent.js
 router.get("/test", (req, res) => {
@@ -56,6 +58,49 @@ router.get("/child/:id", auth, async (req, res) => {
     res.status(500).json({ message: "Server error fetching student" });
   }
 });
+
+// GET /api/parent/notifications - Get all notifications for logged-in parent
+router.get("/notifications", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "parent") {
+      return res.status(403).json({ message: "Access denied: parent only" });
+    }
+
+    const notifications = await Notification.find({ userId: req.user.id })
+      .sort({ createdAt: -1 }) // Most recent first
+      .select("subject messageBody link read alertType sentAt"); // Limit fields for frontend
+
+    res.json(notifications);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+    res.status(500).json({ message: "Server error fetching notifications" });
+  }
+});
+
+// PATCH /api/parent/notifications/:id/read - Mark notification as read
+router.patch("/notifications/:id/read", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "parent") {
+      return res.status(403).json({ message: "Access denied: parent only" });
+    }
+
+    const updated = await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id },
+      { read: true },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.json({ message: "Marked as read", notification: updated });
+  } catch (err) {
+    console.error("Error updating notification:", err);
+    res.status(500).json({ message: "Server error updating notification" });
+  }
+});
+
 
 // --- POST /api/parent/child --- Add a new child (Added Back)
 router.post("/child", auth, async (req, res) => {

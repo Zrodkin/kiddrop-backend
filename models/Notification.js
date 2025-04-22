@@ -59,6 +59,17 @@ const notificationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now // Set when saved, unless scheduled
   },
+
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // Only needed for in-app per-user delivery
+  },
+  read: {
+    type: Boolean,
+    default: false
+  },
+  
   // Optional: Add fields later for tracking read status per recipient if needed
 
 }, { timestamps: true }); // Adds createdAt, updatedAt
