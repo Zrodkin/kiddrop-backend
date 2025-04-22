@@ -211,4 +211,45 @@ router.put("/child/:id", auth, async (req, res) => {
   }
 });
 
+// DELETE /api/parent/notifications/:id - Delete a single notification
+router.delete("/notifications/:id", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "parent") {
+      return res.status(403).json({ message: "Access denied: parent only" });
+    }
+
+    const deleted = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Notification not found or not authorized" });
+    }
+
+    res.json({ message: "Notification deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting notification:", err);
+    res.status(500).json({ message: "Server error deleting notification" });
+  }
+});
+
+
+// DELETE /api/parent/notifications/all - Delete all notifications for this parent
+router.delete("/notifications/all", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "parent") {
+      return res.status(403).json({ message: "Access denied: parent only" });
+    }
+
+    const result = await Notification.deleteMany({ userId: req.user.id });
+
+    res.json({ message: `Deleted ${result.deletedCount} notifications.` });
+  } catch (err) {
+    console.error("Error deleting all notifications:", err);
+    res.status(500).json({ message: "Server error deleting notifications" });
+  }
+});
+
+
 module.exports = router; // Ensure router is exported
