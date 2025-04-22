@@ -5,6 +5,7 @@ const auth = require("../middleware/auth");
 const Student = require("../models/Student");
 const Log = require("../models/Log"); // Add this line to import the Log model
 const User = require("../models/User"); // Add this to get parent names
+const Notification = require("../models/Notification"); // Add this line
 
 // GET /api/admin/stats - get counts for dashboard
 router.get("/stats", auth, async (req, res) => {
@@ -229,6 +230,95 @@ router.get("/parents", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// Add this route handler inside backend/routes/admin.js
+
+// POST /api/admin/send-alert - Receive and process alert data
+router.post("/send-alert", auth, async (req, res) => {
+  // Ensure only admins can send alerts
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied: admin only" });
+  }
+
+  console.log("📨 Received /api/admin/send-alert request");
+  console.log("Request Body:", req.body);
+
+  // Destructure expected data from frontend request body
+  const {
+    alertType,
+    audienceType, // Changed from 'audience' to match frontend state key more closely
+    selectedGrades,
+    selectedParentIds, // Expecting an array of IDs from frontend now
+    subject,
+    messageBody,
+    link,
+    deliveryMethods,
+    scheduleLater,
+    scheduledDateTime
+  } = req.body;
+
+  // Basic Validation
+  if (!alertType || !audienceType || !subject || !messageBody || !deliveryMethods) {
+    return res.status(400).json({ message: "Missing required alert fields." });
+  }
+  if (audienceType === 'grades' && (!selectedGrades || selectedGrades.length === 0)) {
+    return res.status(400).json({ message: "Please select target grades." });
+  }
+  if (audienceType === 'individuals' && (!selectedParentIds || selectedParentIds.length === 0)) {
+    return res.status(400).json({ message: "Please select target parents." });
+  }
+  if (scheduleLater && !scheduledDateTime) {
+      return res.status(400).json({ message: "Please provide a date/time for scheduled alert." });
+  }
+
+  try {
+    // --- Prepare Notification Document ---
+    const notificationData = {
+      senderId: req.user.id, // Logged-in admin's ID from auth middleware
+      alertType,
+      audienceType,
+      subject,
+      messageBody,
+      link: link || undefined, // Only save if provided
+      deliveryMethods,
+      sentAt: scheduleLater ? undefined : new Date(), // Set sentAt now only if not scheduling
+      scheduledAt: scheduleLater ? new Date(scheduledDateTime) : undefined,
+      // Add recipient details based on audience type
+      ...(audienceType === 'grades' && { recipientGrades: selectedGrades }),
+      ...(audienceType === 'individuals' && { recipientParentIds: selectedParentIds }),
+    };
+
+    // --- Save Notification to Database ---
+    // In this version, we just save the record.
+    // Real implementation would involve:
+    // 1. If not scheduled: Fetch actual recipient emails/phones based on audience.
+    // 2. Integrate with Nodemailer/Twilio/etc. to send emails/SMS.
+    // 3. Potentially create individual notification records per user for read tracking.
+    // 4. Handle scheduling logic (e.g., using a job queue like Agenda or Bull).
+
+    const newNotification = new Notification(notificationData);
+    await newNotification.save();
+
+    console.log("✅ Notification saved:", newNotification._id);
+
+    // --- Send Response ---
+    res.status(201).json({
+      message: scheduleLater ? "Alert scheduled successfully!" : "Alert saved successfully! (Sending logic TBD)",
+      notification: newNotification // Send back the saved notification
+    });
+
+  } catch (err) {
+    console.error("❌ Error processing send-alert:", err);
+    // Check for specific errors like invalid date format for scheduling
+    if (err instanceof Error && err.message.includes('Invalid time value')) {
+        return res.status(400).json({ message: "Invalid scheduled date/time format." });
+    }
+    res.status(500).json({ message: "Server error processing alert" });
+  }
+});
+
+// Make sure module.exports = router; is at the very bottom of the file
+
 
 
 // ✅ Export the router
