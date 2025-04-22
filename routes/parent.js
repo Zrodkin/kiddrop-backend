@@ -69,11 +69,30 @@ router.get("/notifications", auth, async (req, res) => {
     const notifications = await Notification.find({ userId: req.user.id })
       .sort({ createdAt: -1 }) // Most recent first
       .select("subject messageBody link read alertType sentAt"); // Limit fields for frontend
-
+      
     res.json(notifications);
   } catch (err) {
     console.error("Error fetching notifications:", err);
     res.status(500).json({ message: "Server error fetching notifications" });
+  }
+});
+
+// Test route for notifications with detailed logging
+router.get("/notifications-test", auth, async (req, res) => {
+  console.log("🔔 Notifications test route hit");
+  console.log("👤 User in request:", req.user);
+  
+  try {
+    if (req.user.role !== "parent") {
+      console.log("❌ User role check failed:", req.user.role);
+      return res.status(403).json({ message: "Access denied: parent only" });
+    }
+
+    console.log("✅ Parent role verified");
+    res.json({ message: "Notifications test successful", userId: req.user.id });
+  } catch (err) {
+    console.error("❌ Error in notifications test:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

@@ -289,9 +289,7 @@ router.post("/send-alert", auth, async (req, res) => {
       ...(audienceType === 'individuals' && { recipientParentIds: selectedParentIds }),
     };
 
-    // --- Save Notification to Database ---
-    const newNotification = new Notification(notificationData);
-    await newNotification.save();
+
     // --- Create individual in-app notifications ---
 if (!scheduleLater && deliveryMethods.app) {
   let recipients = [];
